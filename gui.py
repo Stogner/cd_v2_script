@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 from tkinter import simpledialog, filedialog
 import webbrowser
-from logic import esegui_azione, MACROS
+from logic import esegui_azione, MACROS, parse_hotkey
 
 # Costanti globali
 FONT = None
@@ -15,7 +15,7 @@ SPACING_X = 140
 SPACING_Y = 120
 MARGIN_Y = 20
 SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 650
+SCREEN_HEIGHT = 680
 
 cancel_button_rect = None
 browse_button_rect = None
@@ -165,21 +165,35 @@ def disegna_configuratore_avanzato(selezionato, config):
         base_y += 40
 
     elif tipo == "macro":
-        label = small_font.render("SELECT MACRO:", True, (200, 200, 200))
-        SCREEN.blit(label, (50, base_y))
-
-        base_y += label.get_height() + 5
-
+        # Preset: un clic scrive la combinazione nel campo sotto
         macro_width = 120
         macro_total_width = len(MACROS) * macro_width + (len(MACROS) - 1) * spazio
         macro_start_x = (SCREEN_WIDTH - macro_total_width) // 2
+        tasti_valore = parse_hotkey(valore)
         for i, (chiave, macro) in enumerate(MACROS.items()):
             rect = pygame.Rect(macro_start_x + i * (macro_width + spazio), base_y, macro_width, 30)
-            colore = (200, 120, 40) if valore == chiave else (80, 80, 80)
+            attivo = tasti_valore is not None and tasti_valore == parse_hotkey(chiave)
+            colore = (200, 120, 40) if attivo else (80, 80, 80)
             pygame.draw.rect(SCREEN, colore, rect, border_radius=5)
             testo = small_font.render(macro["label"], True, (255, 255, 255))
             SCREEN.blit(testo, testo.get_rect(center=rect.center))
             macro_button_rects[chiave] = rect
+
+        base_y += 40
+
+        # Combinazione personalizzata
+        if valore and tasti_valore is None:
+            label = small_font.render("INVALID KEY COMBINATION - use names like ctrl, shift, alt, win, a-z, f1-f24, tab, enter", True, (230, 80, 80))
+        else:
+            label = small_font.render("OR TYPE KEYS (e.g. ctrl+shift+s, alt+tab, win+d):", True, (200, 200, 200))
+        SCREEN.blit(label, (50, base_y))
+
+        base_y += label.get_height() + 5
+
+        input_rect = pygame.Rect(50, base_y, 540, 30)
+        pygame.draw.rect(SCREEN, (255, 255, 255), input_rect, border_radius=4)
+        render_text = small_font.render(valore or "", True, (0, 0, 0))
+        SCREEN.blit(render_text, (input_rect.x + 5, input_rect.y + 7))
 
         base_y += 40
 
@@ -196,7 +210,9 @@ def disegna_configuratore_avanzato(selezionato, config):
 
     save_rect = pygame.Rect(start_x + 100, button_y, 80, 30)
 
-    if save_clicked:
+    if tipo == "macro" and parse_hotkey(valore) is None:
+        colore_save = (100, 100, 100)  # combinazione non valida: non salvabile
+    elif save_clicked:
         colore_save = (200, 120, 40)  # arancione standard (dopo clic)
     elif save_enabled:
         colore_save = (200, 120, 40)  # arancione scuro (modificato)

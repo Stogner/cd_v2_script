@@ -64,9 +64,13 @@ def esegui_azione(azione):
             subprocess.Popen(azione["value"])
         except Exception as e:
             print("Errore aprendo eseguibile:", e)
-    elif azione["type"] == "macro" and azione["value"] in MACROS:
-        simulate_hotkey(MACROS[azione["value"]]["keys"])
-        print(f"[DEBUG] Macro eseguita: {MACROS[azione['value']]['label']}")
+    elif azione["type"] == "macro" and azione["value"]:
+        tasti = parse_hotkey(azione["value"])
+        if tasti:
+            simulate_hotkey(tasti)
+            print(f"[DEBUG] Macro eseguita: {azione['value']}")
+        else:
+            print("[ERROR] Combinazione di tasti non valida:", azione["value"])
     else:
         print("Nessuna azione definita")
 
@@ -98,20 +102,53 @@ def simulate_keypress(vk_code):
     ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_EXTENDEDKEY, 0)
     ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0)
 
-# Macro da tastiera: chiave in config.json -> etichetta GUI + sequenza di virtual-key codes
-VK_SHIFT = 0x10
-VK_CONTROL = 0x11
-VK_SNAPSHOT = 0x2C  # Print Screen
-VK_LWIN = 0x5B
-MACROS = {
-    "copy": {"label": "CTRL+C", "keys": [VK_CONTROL, 0x43]},
-    "paste": {"label": "CTRL+V", "keys": [VK_CONTROL, 0x56]},
-    "snip": {"label": "SNIP", "keys": [VK_LWIN, VK_SHIFT, 0x53]},        # Win+Shift+S: ritaglio area
-    "screenshot": {"label": "SCREENSHOT", "keys": [VK_LWIN, VK_SNAPSHOT]},  # Win+PrtScn: salva in Immagini\Screenshot
+# Nomi dei tasti utilizzabili nelle combinazioni (es. "ctrl+shift+s") -> virtual-key code
+KEY_NAMES = {
+    "ctrl": 0x11, "control": 0x11,
+    "shift": 0x10,
+    "alt": 0x12,
+    "win": 0x5B, "windows": 0x5B,
+    "enter": 0x0D, "return": 0x0D,
+    "esc": 0x1B, "escape": 0x1B,
+    "tab": 0x09,
+    "space": 0x20,
+    "backspace": 0x08,
+    "delete": 0x2E, "del": 0x2E,
+    "insert": 0x2D, "ins": 0x2D,
+    "home": 0x24, "end": 0x23,
+    "pageup": 0x21, "pgup": 0x21,
+    "pagedown": 0x22, "pgdn": 0x22,
+    "up": 0x26, "down": 0x28, "left": 0x25, "right": 0x27,
+    "printscreen": 0x2C, "prtsc": 0x2C,
+    # "+" separa i tasti, quindi alcuni simboli si scrivono per nome
+    "plus": 0xBB, "equals": 0xBB, "minus": 0xBD,
+    ",": 0xBC, ".": 0xBE, "/": 0xBF, ";": 0xBA, "'": 0xDE,
+    "[": 0xDB, "]": 0xDD, "\\": 0xDC, "`": 0xC0,
 }
+KEY_NAMES.update({chr(c): c for c in range(ord("A"), ord("Z") + 1)})  # lettere (VK = ASCII maiuscolo)
+KEY_NAMES.update({chr(c).lower(): c for c in range(ord("A"), ord("Z") + 1)})
+KEY_NAMES.update({str(n): 0x30 + n for n in range(10)})                # cifre 0-9
+KEY_NAMES.update({f"f{n}": 0x6F + n for n in range(1, 25)})            # F1-F24
 
 # Tasti che richiedono il flag EXTENDEDKEY
-EXTENDED_KEYS = {VK_SNAPSHOT, VK_LWIN}
+EXTENDED_KEYS = {0x5B, 0x2C, 0x2D, 0x2E, 0x24, 0x23, 0x21, 0x22, 0x26, 0x28, 0x25, 0x27}
+
+# Macro predefinite: chiave -> etichetta GUI + combinazione di tasti
+MACROS = {
+    "copy": {"label": "CTRL+C", "combo": "ctrl+c"},
+    "paste": {"label": "CTRL+V", "combo": "ctrl+v"},
+    "snip": {"label": "SNIP", "combo": "win+shift+s"},                  # ritaglio area negli appunti
+    "screenshot": {"label": "SCREENSHOT", "combo": "win+printscreen"},  # salva in Immagini\Screenshot
+}
+
+def parse_hotkey(combo):
+    # "ctrl+shift+s" -> [0x11, 0x10, 0x53]; None se la combinazione non è valida
+    if combo in MACROS:
+        combo = MACROS[combo]["combo"]
+    tasti = [t.strip().lower() for t in (combo or "").split("+")]
+    if not tasti or any(t not in KEY_NAMES for t in tasti):
+        return None
+    return [KEY_NAMES[t] for t in tasti]
 
 def simulate_hotkey(vk_codes):
     # Preme i tasti in ordine e li rilascia in ordine inverso (es. Ctrl giù, C giù, C su, Ctrl su)

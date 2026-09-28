@@ -56,11 +56,15 @@ If everything is set up correctly, a graphical window will open.
 - Choose between:
   - a website URL (e.g. `https://youtube.com`)
   - a `.exe` file on your PC
-  - a keyboard macro:
+  - a keyboard macro, either a preset:
     - `CTRL+C` – copy
     - `CTRL+V` – paste
     - `SNIP` – `Win+Shift+S`, select an area to screenshot (copied to clipboard)
     - `SCREENSHOT` – `Win+PrtScn`, full-screen screenshot saved to `Pictures\Screenshots`
+  - or any key combination typed in the box, keys joined with `+` (e.g. `ctrl+z`, `alt+tab`, `ctrl+shift+esc`, `win+d`)
+    - Modifiers: `ctrl`, `shift`, `alt`, `win`
+    - Keys: `a`–`z`, `0`–`9`, `f1`–`f24`, `enter`, `esc`, `tab`, `space`, `backspace`, `delete`, `insert`, `home`, `end`, `pageup`, `pagedown`, `up`, `down`, `left`, `right`, `printscreen`
+    - Symbols: `plus`, `minus`, `,` `.` `/` `;` `'` `[` `]` `\` `` ` ``
   - or no action
 - Modify the fields directly inside the app
 - Use the "Browse" button to select `.exe` files

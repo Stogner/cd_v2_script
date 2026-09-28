@@ -1,5 +1,5 @@
 import argparse
-from logic import load_config, save_config, ascolta_seriale, seleziona_pulsante, get_pulsante_selezionato, deseleziona_pulsante, MACROS
+from logic import load_config, save_config, ascolta_seriale, seleziona_pulsante, get_pulsante_selezionato, deseleziona_pulsante, MACROS, parse_hotkey
 from gui import init_pygame, disegna_pulsanti, trova_pulsante_click
 import pygame
 import pyperclip
@@ -57,6 +57,9 @@ def main(gui_mode):
                         new_value = gui.temp_config_value if gui.temp_config_value is not None else current.get("value", "")
                         if new_type == "none":
                             new_value = ""
+                        if new_type == "macro" and parse_hotkey(new_value) is None:
+                            # Combinazione non valida: non salvare (la GUI mostra l'errore)
+                            continue
                         config[selezionato] = {
                             "type": new_type,
                             "value": new_value
@@ -68,21 +71,18 @@ def main(gui_mode):
                         save_config(config)
                         gui.save_clicked = False
 
-                    # Click su uno dei 3 pulsanti esclusivi (LINK, EXE, NONE)
+                    # Click su uno dei pulsanti esclusivi (LINK, EXE, MACRO, NONE)
                     if not click_consumed and selezionato and hasattr(gui, "tipo_button_rects"):
                         for nome, rect in gui.tipo_button_rects.items():
                             if rect.collidepoint(mx, my):
                                 tipo = nome.lower()
+                                salvato = config[selezionato]
+                                tipo_attuale = gui.temp_config_type or salvato.get("type", "none")
+                                if tipo != tipo_attuale:
+                                    # Un URL non è un percorso né una combinazione di tasti:
+                                    # si riparte dal valore salvato per quel tipo, oppure vuoto
+                                    gui.temp_config_value = salvato.get("value", "") if tipo == salvato.get("type") else ""
                                 gui.temp_config_type = tipo
-
-                                if tipo == "none":
-                                    gui.temp_config_value = ""
-                                else:
-                                    if gui.temp_config_value is None:
-                                        gui.temp_config_value = config[selezionato].get("value", "")
-                                    # Un nome di macro non è un URL/percorso valido e viceversa
-                                    if (tipo == "macro") != (gui.temp_config_value in MACROS):
-                                        gui.temp_config_value = ""
 
                                 gui.save_enabled = gui.is_dirty(selezionato, config)
                                 click_consumed = True
@@ -92,7 +92,7 @@ def main(gui_mode):
                     if not click_consumed and selezionato:
                         for chiave, rect in gui.macro_button_rects.items():
                             if rect.collidepoint(mx, my):
-                                gui.temp_config_value = chiave
+                                gui.temp_config_value = MACROS[chiave]["combo"]
                                 gui.save_enabled = gui.is_dirty(selezionato, config)
                                 click_consumed = True
                                 break
@@ -145,7 +145,7 @@ def main(gui_mode):
                         continue
 
                     active_type = gui.temp_config_type if gui.temp_config_type is not None else config[selezionato].get("type", "none")
-                    if active_type != "link":
+                    if active_type not in ("link", "macro"):
                         gui.input_active = False
                         continue
 
