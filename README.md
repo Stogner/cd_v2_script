@@ -56,6 +56,11 @@ If everything is set up correctly, a graphical window will open.
 - Choose between:
   - a website URL (e.g. `https://youtube.com`)
   - a `.exe` file on your PC
+  - a keyboard macro:
+    - `CTRL+C` – copy
+    - `CTRL+V` – paste
+    - `SNIP` – `Win+Shift+S`, select an area to screenshot (copied to clipboard)
+    - `SCREENSHOT` – `Win+PrtScn`, full-screen screenshot saved to `Pictures\Screenshots`
   - or no action
 - Modify the fields directly inside the app
 - Use the "Browse" button to select `.exe` files
@@ -76,6 +81,9 @@ Yes, any valid `https://` link will work.
 
 **🧩 Can I assign programs like `.exe` files?**  
 Yes! Use the “Browse” button to pick an executable file.
+
+**⌨️ Where do keyboard macros go?**  
+Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button.
 
 **💾 It says 'pip' is not recognized**  
 Restart your computer or reinstall Python and ensure "Add Python to PATH" is selected during setup.

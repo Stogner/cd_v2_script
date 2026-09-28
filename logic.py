@@ -64,6 +64,9 @@ def esegui_azione(azione):
             subprocess.Popen(azione["value"])
         except Exception as e:
             print("Errore aprendo eseguibile:", e)
+    elif azione["type"] == "macro" and azione["value"] in MACROS:
+        simulate_hotkey(MACROS[azione["value"]]["keys"])
+        print(f"[DEBUG] Macro eseguita: {MACROS[azione['value']]['label']}")
     else:
         print("Nessuna azione definita")
 
@@ -94,6 +97,32 @@ def simulate_keypress(vk_code):
     KEYEVENTF_KEYUP = 0x0002
     ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_EXTENDEDKEY, 0)
     ctypes.windll.user32.keybd_event(vk_code, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0)
+
+# Macro da tastiera: chiave in config.json -> etichetta GUI + sequenza di virtual-key codes
+VK_SHIFT = 0x10
+VK_CONTROL = 0x11
+VK_SNAPSHOT = 0x2C  # Print Screen
+VK_LWIN = 0x5B
+MACROS = {
+    "copy": {"label": "CTRL+C", "keys": [VK_CONTROL, 0x43]},
+    "paste": {"label": "CTRL+V", "keys": [VK_CONTROL, 0x56]},
+    "snip": {"label": "SNIP", "keys": [VK_LWIN, VK_SHIFT, 0x53]},        # Win+Shift+S: ritaglio area
+    "screenshot": {"label": "SCREENSHOT", "keys": [VK_LWIN, VK_SNAPSHOT]},  # Win+PrtScn: salva in Immagini\Screenshot
+}
+
+# Tasti che richiedono il flag EXTENDEDKEY
+EXTENDED_KEYS = {VK_SNAPSHOT, VK_LWIN}
+
+def simulate_hotkey(vk_codes):
+    # Preme i tasti in ordine e li rilascia in ordine inverso (es. Ctrl giù, C giù, C su, Ctrl su)
+    KEYEVENTF_EXTENDEDKEY = 0x0001
+    KEYEVENTF_KEYUP = 0x0002
+    for vk in vk_codes:
+        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
+        ctypes.windll.user32.keybd_event(vk, 0, flags, 0)
+    for vk in reversed(vk_codes):
+        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
+        ctypes.windll.user32.keybd_event(vk, 0, flags | KEYEVENTF_KEYUP, 0)
 
 def gestisci_volume(value):
     global last_volume_value

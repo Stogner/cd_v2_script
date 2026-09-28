@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 from tkinter import simpledialog, filedialog
 import webbrowser
-from logic import esegui_azione
+from logic import esegui_azione, MACROS
 
 # Costanti globali
 FONT = None
@@ -21,6 +21,7 @@ cancel_button_rect = None
 browse_button_rect = None
 save_button_rect = None
 tipo_button_rects = {}
+macro_button_rects = {}
 
 temp_config_type = None
 temp_config_value = None
@@ -97,7 +98,7 @@ def disegna_pulsanti(config, selezionato=None):
     pygame.display.flip()
 
 def disegna_configuratore_avanzato(selezionato, config):
-    global tipo_button_rects, cancel_button_rect, input_rect, browse_button_rect
+    global tipo_button_rects, cancel_button_rect, input_rect, browse_button_rect, macro_button_rects
     small_font = pygame.font.SysFont(None, 16)
 
     data = config.get(selezionato, {"type": "none", "value": ""})
@@ -107,7 +108,7 @@ def disegna_configuratore_avanzato(selezionato, config):
     tipo = temp_config_type if temp_config_type is not None else data.get("type", "none")
     valore = temp_config_value if temp_config_value is not None else data.get("value", "")
 
-    opzioni = ["LINK", "EXE", "NONE"]
+    opzioni = ["LINK", "EXE", "MACRO", "NONE"]
     base_y = 460
     btn_width = 120
     btn_height = 40
@@ -115,6 +116,7 @@ def disegna_configuratore_avanzato(selezionato, config):
     total_width = len(opzioni) * btn_width + (len(opzioni) - 1) * spazio
     start_x = (SCREEN_WIDTH - total_width) // 2
     tipo_button_rects = {}
+    macro_button_rects = {}
     input_rect = None
     browse_button_rect = None
 
@@ -159,7 +161,26 @@ def disegna_configuratore_avanzato(selezionato, config):
         btn_text = small_font.render("BROWSE", True, (255, 255, 255))
         SCREEN.blit(btn_text, btn_text.get_rect(center=browse_rect.center))
         browse_button_rect = browse_rect
-        
+
+        base_y += 40
+
+    elif tipo == "macro":
+        label = small_font.render("SELECT MACRO:", True, (200, 200, 200))
+        SCREEN.blit(label, (50, base_y))
+
+        base_y += label.get_height() + 5
+
+        macro_width = 120
+        macro_total_width = len(MACROS) * macro_width + (len(MACROS) - 1) * spazio
+        macro_start_x = (SCREEN_WIDTH - macro_total_width) // 2
+        for i, (chiave, macro) in enumerate(MACROS.items()):
+            rect = pygame.Rect(macro_start_x + i * (macro_width + spazio), base_y, macro_width, 30)
+            colore = (200, 120, 40) if valore == chiave else (80, 80, 80)
+            pygame.draw.rect(SCREEN, colore, rect, border_radius=5)
+            testo = small_font.render(macro["label"], True, (255, 255, 255))
+            SCREEN.blit(testo, testo.get_rect(center=rect.center))
+            macro_button_rects[chiave] = rect
+
         base_y += 40
 
 

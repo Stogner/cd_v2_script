@@ -1,5 +1,5 @@
 import argparse
-from logic import load_config, save_config, ascolta_seriale, seleziona_pulsante, get_pulsante_selezionato, deseleziona_pulsante
+from logic import load_config, save_config, ascolta_seriale, seleziona_pulsante, get_pulsante_selezionato, deseleziona_pulsante, MACROS
 from gui import init_pygame, disegna_pulsanti, trova_pulsante_click
 import pygame
 import pyperclip
@@ -80,11 +80,23 @@ def main(gui_mode):
                                 else:
                                     if gui.temp_config_value is None:
                                         gui.temp_config_value = config[selezionato].get("value", "")
+                                    # Un nome di macro non è un URL/percorso valido e viceversa
+                                    if (tipo == "macro") != (gui.temp_config_value in MACROS):
+                                        gui.temp_config_value = ""
 
                                 gui.save_enabled = gui.is_dirty(selezionato, config)
                                 click_consumed = True
                                 break
-                            
+
+                    # Click su una delle macro (CTRL+C, CTRL+V, SNIP, SCREENSHOT)
+                    if not click_consumed and selezionato:
+                        for chiave, rect in gui.macro_button_rects.items():
+                            if rect.collidepoint(mx, my):
+                                gui.temp_config_value = chiave
+                                gui.save_enabled = gui.is_dirty(selezionato, config)
+                                click_consumed = True
+                                break
+
                     # Click su "Browse"
                     current_type = gui.temp_config_type or (config.get(selezionato, {}).get("type") if selezionato else None)
                     if (
