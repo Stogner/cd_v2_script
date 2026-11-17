@@ -86,7 +86,7 @@ The terminal should print `Connesso a COM…` ("Connected to COM…"). Leave thi
 - Modify the fields directly inside the app
 - Use the "Browse" button to select `.exe` files
 - Save your changes only when you're ready
-- The knob controls the volume (press it to mute). Button 3 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
+- The knob controls the volume (press it to mute). Button 10 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
 
 Settings are stored in a local file called `config.json`.
 

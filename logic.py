@@ -49,7 +49,7 @@ def load_config():
         print("[DEBUG] Config file not found, creating default config.")
         config = {
             "BUTTON_1": {"type": "link", "value": "https://www.youtube.com"},
-            "BUTTON_3": {"type": "macro", "value": "playpause"},
+            "BUTTON_10": {"type": "macro", "value": "playpause"},
         }
     # Aggiunge i pulsanti mancanti (es. config creati quando i pulsanti erano 9)
     for i in range(1, NUM_BUTTONS + 1):
