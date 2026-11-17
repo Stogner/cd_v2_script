@@ -2,7 +2,11 @@
 #define DT 4
 #define SW 3
 
-const int buttonPins[] = {A1, A2, A0, 11, 10, 9, 2, 6, 7, 8};  // ultimi = MEDIA
+// Pin dei pulsanti 1-9 in ordine di lettura sul deck, poi MEDIA (ultimo):
+//   [1:D6]  [2:D7]  [MEDIA:D8]
+//   [3:D9]  [4:D10] [5:D11]  (encoder)
+//   [6:A2]  [7:A0]  [8:A1]   [9:D2]
+const int buttonPins[] = {6, 7, 9, 10, 11, A2, A0, A1, 2, 8};
 
 int counter = 0;
 int currentStateCLK;
