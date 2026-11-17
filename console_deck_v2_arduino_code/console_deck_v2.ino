@@ -2,11 +2,11 @@
 #define DT 4
 #define SW 3
 
-// Pin dei pulsanti 1-9 in ordine di lettura sul deck, poi MEDIA (ultimo):
-//   [1:D6]  [2:D7]  [MEDIA:D8]
-//   [3:D9]  [4:D10] [5:D11]  (encoder)
-//   [6:D12] [7:A0]  [8:A1]   [9:D2]
-const int buttonPins[] = {6, 7, 9, 10, 11, 12, A0, A1, 2, 8};
+// Pin dei pulsanti 1-10 in ordine di lettura sul deck:
+//   [1:D6]  [2:D7]  [3:D8]
+//   [4:D9]  [5:D10] [6:D11]  (encoder)
+//   [7:D12] [8:A0]  [9:A1]   [10:D2]
+const int buttonPins[] = {6, 7, 8, 9, 10, 11, 12, A0, A1, 2};
 
 int counter = 0;
 int currentStateCLK;
@@ -51,12 +51,8 @@ void loop() {
   // Pulsanti utente
   for (int i = 0; i < 10; i++) {
     if (digitalRead(buttonPins[i]) == LOW) {
-      if (i < 9) {
-        Serial.print("BUTTON_");
-        Serial.println(i + 1);
-      } else {
-        Serial.println("MEDIA");
-      }
+      Serial.print("BUTTON_");
+      Serial.println(i + 1);
       delay(200); // debounce
     }
   }

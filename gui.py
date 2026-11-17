@@ -41,20 +41,41 @@ def init_pygame():
     pygame.display.set_caption("ConsoleDeck V2")
 
 
+# Posizione (colonna, riga) di ogni pulsante, come sul deck fisico:
+#   [1] [2] [3]
+#   [4] [5] [6] (encoder)
+#   [7] [8] [9] [10]
+BUTTON_LAYOUT = [(0, 0), (1, 0), (2, 0),
+                 (0, 1), (1, 1), (2, 1),
+                 (0, 2), (1, 2), (2, 2), (3, 2)]
+ENCODER_POS = (3, 1)
+GRID_COLS = 4
+GRID_WIDTH = GRID_COLS * BTN_SIZE + (GRID_COLS - 1) * (SPACING_X - BTN_SIZE)
+GRID_START_X = (SCREEN_WIDTH - GRID_WIDTH) // 2
+
+def posizione_cella(col, riga):
+    return GRID_START_X + col * SPACING_X, MARGIN_Y + riga * SPACING_Y
+
+
 def disegna_pulsanti(config, selezionato=None):
     SCREEN.fill((30, 30, 30))
 
-    btn_size = 100
-    spacing_x = 140
-    spacing_y = 120
-    total_width = 3 * btn_size + 2 * (spacing_x - btn_size)
-    start_x = (640 - total_width) // 2
-    margin_y = 20
+    btn_size = BTN_SIZE
+    spacing_y = SPACING_Y
+    total_width = GRID_WIDTH
+    start_x = GRID_START_X
+    margin_y = MARGIN_Y
 
-    for i in range(9):
+    # Encoder del volume (solo indicativo, non cliccabile)
+    ex, ey = posizione_cella(*ENCODER_POS)
+    centro = (ex + btn_size // 2, ey + btn_size // 2)
+    pygame.draw.circle(SCREEN, (90, 90, 90), centro, btn_size // 2 - 6, width=3)
+    vol_text = SMALL_FONT.render("VOLUME", True, (120, 120, 120))
+    SCREEN.blit(vol_text, vol_text.get_rect(center=centro))
+
+    for i, (col, riga) in enumerate(BUTTON_LAYOUT):
         key = f"BUTTON_{i+1}"
-        x = start_x + (i % 3) * spacing_x
-        y = margin_y + (i // 3) * spacing_y
+        x, y = posizione_cella(col, riga)
 
         # Sfondo pulsante
         pygame.draw.rect(SCREEN, (50, 50, 50), (x, y, btn_size, btn_size), border_radius=8)
@@ -79,7 +100,7 @@ def disegna_pulsanti(config, selezionato=None):
     font_18 = pygame.font.SysFont(None, 18)
 
     if selezionato:
-        testo = f"Program button {selezionato[-1]}"
+        testo = f"Program button {selezionato.split('_')[1]}"
     else:
         testo = "Click on a button to program it"
 
@@ -87,7 +108,7 @@ def disegna_pulsanti(config, selezionato=None):
     area_testo_y = linea_y + 10
     area_testo_height = btn_size
 
-    testo_x = (640 - testo_render.get_width()) // 2
+    testo_x = (SCREEN_WIDTH - testo_render.get_width()) // 2
     testo_y = area_testo_y + (area_testo_height - testo_render.get_height()) // 2
 
     SCREEN.blit(testo_render, (testo_x, testo_y))
@@ -243,12 +264,8 @@ def is_dirty(selezionato, config):
 
 
 def trova_pulsante_click(mx, my):
-    total_width = 3 * BTN_SIZE + 2 * (SPACING_X - BTN_SIZE)
-    start_x = (SCREEN_WIDTH - total_width) // 2
-
-    for i in range(9):
-        x = start_x + (i % 3) * SPACING_X
-        y = MARGIN_Y + (i // 3) * SPACING_Y
+    for i, (col, riga) in enumerate(BUTTON_LAYOUT):
+        x, y = posizione_cella(col, riga)
         if x <= mx <= x + BTN_SIZE and y <= my <= y + BTN_SIZE:
             return f"BUTTON_{i+1}"
     return None

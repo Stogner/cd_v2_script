@@ -8,8 +8,8 @@
     "value": ""
   },
   "BUTTON_3": {
-    "type": "none",
-    "value": ""
+    "type": "macro",
+    "value": "playpause"
   },
   "BUTTON_4": {
     "type": "none",
@@ -28,10 +28,14 @@
     "value": ""
   },
   "BUTTON_8": {
-    "type": "exe",
-    "value": "C:/Program Files/Bambu Studio/bambu-studio.exe"
+    "type": "none",
+    "value": ""
   },
   "BUTTON_9": {
+    "type": "none",
+    "value": ""
+  },
+  "BUTTON_10": {
     "type": "none",
     "value": ""
   }

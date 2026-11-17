@@ -37,20 +37,24 @@ pulsante_selezionato = None
 last_volume_value = 0
 is_muted = False
 
+NUM_BUTTONS = 10
+
 def load_config():
     print(f"[DEBUG] Loading config from: {CONFIG_FILE}")
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
             config = json.load(f)
             print("[DEBUG] Config loaded:", json.dumps(config, indent=2))
-            return config
     else:
         print("[DEBUG] Config file not found, creating default config.")
-        config = {}
-        for i in range(1, 10):
-            config[f"BUTTON_{i}"] = {"type": "none", "value": ""}
-        config["BUTTON_1"] = {"type": "link", "value": "https://www.youtube.com"}
-        return config
+        config = {
+            "BUTTON_1": {"type": "link", "value": "https://www.youtube.com"},
+            "BUTTON_3": {"type": "macro", "value": "playpause"},
+        }
+    # Aggiunge i pulsanti mancanti (es. config creati quando i pulsanti erano 9)
+    for i in range(1, NUM_BUTTONS + 1):
+        config.setdefault(f"BUTTON_{i}", {"type": "none", "value": ""})
+    return config
 
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:
@@ -120,6 +124,9 @@ KEY_NAMES = {
     "pagedown": 0x22, "pgdn": 0x22,
     "up": 0x26, "down": 0x28, "left": 0x25, "right": 0x27,
     "printscreen": 0x2C, "prtsc": 0x2C,
+    # Tasti multimediali
+    "playpause": 0xB3, "nexttrack": 0xB0, "prevtrack": 0xB1, "stop": 0xB2,
+    "volumeup": 0xAF, "volumedown": 0xAE, "volumemute": 0xAD,
     # "+" separa i tasti, quindi alcuni simboli si scrivono per nome
     "plus": 0xBB, "equals": 0xBB, "minus": 0xBD,
     ",": 0xBC, ".": 0xBE, "/": 0xBF, ";": 0xBA, "'": 0xDE,
@@ -131,7 +138,8 @@ KEY_NAMES.update({str(n): 0x30 + n for n in range(10)})                # cifre 0
 KEY_NAMES.update({f"f{n}": 0x6F + n for n in range(1, 25)})            # F1-F24
 
 # Tasti che richiedono il flag EXTENDEDKEY
-EXTENDED_KEYS = {0x5B, 0x2C, 0x2D, 0x2E, 0x24, 0x23, 0x21, 0x22, 0x26, 0x28, 0x25, 0x27}
+EXTENDED_KEYS = {0x5B, 0x2C, 0x2D, 0x2E, 0x24, 0x23, 0x21, 0x22, 0x26, 0x28, 0x25, 0x27,
+                 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3}
 
 # Macro predefinite: chiave -> etichetta GUI + combinazione di tasti
 MACROS = {

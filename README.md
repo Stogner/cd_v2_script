@@ -1,6 +1,6 @@
 # 🎮 ConsoleDeck
 
-ConsoleDeck is a simple graphical interface that allows you to configure up to 9 buttons to launch websites or executable files with a click.  
+ConsoleDeck is a simple graphical interface that allows you to configure up to 10 buttons to launch websites, executable files or keyboard shortcuts with a click.  
 Ideal for creating your own customizable macro deck or personal launcher.
 
 ---
@@ -68,7 +68,7 @@ The terminal should print `Connesso a COM…` ("Connected to COM…"). Leave thi
 
 ## ⚙️ Features
 
-- Click one of the 9 buttons to assign an action
+- Click one of the 10 buttons (laid out like the deck itself) to assign an action
 - Choose between:
   - a website URL (e.g. `https://youtube.com`)
   - a `.exe` file on your PC
@@ -81,11 +81,12 @@ The terminal should print `Connesso a COM…` ("Connected to COM…"). Leave thi
     - Modifiers: `ctrl`, `shift`, `alt`, `win`
     - Keys: `a`–`z`, `0`–`9`, `f1`–`f24`, `enter`, `esc`, `tab`, `space`, `backspace`, `delete`, `insert`, `home`, `end`, `pageup`, `pagedown`, `up`, `down`, `left`, `right`, `printscreen`
     - Symbols: `plus`, `minus`, `,` `.` `/` `;` `'` `[` `]` `\` `` ` ``
+    - Media keys: `playpause`, `nexttrack`, `prevtrack`, `stop`, `volumeup`, `volumedown`, `volumemute`
   - or no action
 - Modify the fields directly inside the app
 - Use the "Browse" button to select `.exe` files
 - Save your changes only when you're ready
-- Supports volume control, mute toggle, and media play/pause via serial
+- The knob controls the volume (press it to mute). Button 3 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
 
 Settings are stored in a local file called `config.json`.
 
