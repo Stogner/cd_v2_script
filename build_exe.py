@@ -14,7 +14,7 @@ from icon import crea_icona
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs("build", exist_ok=True)
 
-ICO = os.path.join("build", "consoledeck.ico")
+ICO = os.path.abspath(os.path.join("build", "consoledeck.ico"))  # assoluto: --specpath cambia la base dei percorsi relativi
 crea_icona(256).save(ICO, sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
 
 PyInstaller.__main__.run([
