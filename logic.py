@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import shutil
 import subprocess
 import webbrowser
 import serial.tools.list_ports
@@ -32,6 +33,13 @@ if getattr(sys, "frozen", False):
 else:
     DATA_DIR = SCRIPT_DIR
 CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
+
+if getattr(sys, "frozen", False) and not os.path.exists(CONFIG_FILE):
+    # Primo avvio dell'exe: importa i pulsanti della versione Python, se il suo config.json è accanto all'exe
+    _config_vecchio = os.path.join(os.path.dirname(sys.executable), "config.json")
+    if os.path.exists(_config_vecchio):
+        shutil.copyfile(_config_vecchio, CONFIG_FILE)
+        print(f"[DEBUG] Impostazioni importate da {_config_vecchio}")
 
 # Stato del pulsante selezionato
 pulsante_selezionato = None
@@ -68,7 +76,7 @@ def esegui_azione(azione):
         webbrowser.open(azione["value"])
     elif azione["type"] == "exe" and azione["value"]:
         try:
-            subprocess.Popen(azione["value"])
+            avvia_programma(azione["value"])
         except Exception as e:
             print("Errore aprendo eseguibile:", e)
     elif azione["type"] == "macro" and azione["value"]:
@@ -80,6 +88,23 @@ def esegui_azione(azione):
             print("[ERROR] Combinazione di tasti non valida:", azione["value"])
     else:
         print("Nessuna azione definita")
+
+SCRIPT_EXTS = (".ps1", ".bat", ".cmd")
+
+def avvia_programma(percorso):
+    # Gli script girano in una finestra propria (visibile finché lo script è in esecuzione),
+    # con la cartella dello script come cartella di lavoro
+    ext = os.path.splitext(percorso)[1].lower()
+    if ext not in SCRIPT_EXTS:
+        subprocess.Popen(percorso)
+        return
+    if ext == ".ps1":
+        comando = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", percorso]
+    else:
+        comando = ["cmd.exe", "/c", percorso]
+    subprocess.Popen(comando, cwd=os.path.dirname(percorso) or None,
+                     creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
+    print(f"[DEBUG] Script avviato: {percorso}")
 
 def gestisci_messaggio(linea, config):
     # Esegue l'azione corrispondente a una riga ricevuta dal deck

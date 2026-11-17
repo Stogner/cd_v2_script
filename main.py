@@ -127,8 +127,8 @@ def run_gui(config):
                         root = tk.Tk()
                         root.withdraw()  # Nasconde la finestra principale
                         path = filedialog.askopenfilename(
-                            title="Select Executable",
-                            filetypes=[("Executable files", "*.exe")],
+                            title="Select Program or Script",
+                            filetypes=[("Programs and scripts", "*.exe *.ps1 *.bat *.cmd"), ("All files", "*.*")],
                             initialdir=os.path.expanduser("~")
                         )
                         if path:

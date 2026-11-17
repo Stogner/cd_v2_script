@@ -179,7 +179,7 @@ def disegna_configuratore_avanzato(selezionato, config):
         base_y += 40
 
     elif tipo == "exe":
-        label = small_font.render("SELECT EXECUTABLE FILE:", True, (200, 200, 200))
+        label = small_font.render("SELECT PROGRAM OR SCRIPT (.exe, .ps1, .bat, .cmd):", True, (200, 200, 200))
         SCREEN.blit(label, (50, base_y))
 
         base_y += label.get_height() + 5
@@ -188,6 +188,14 @@ def disegna_configuratore_avanzato(selezionato, config):
         btn_text = small_font.render("BROWSE", True, (255, 255, 255))
         SCREEN.blit(btn_text, btn_text.get_rect(center=browse_rect.center))
         browse_button_rect = browse_rect
+
+        # File scelto (se il percorso è troppo lungo si mostra la parte finale)
+        testo_file = valore or "No file selected"
+        larghezza_max = SCREEN_WIDTH - 50 - (browse_rect.right + 10)
+        while len(testo_file) > 1 and small_font.size(testo_file)[0] > larghezza_max:
+            testo_file = "..." + testo_file.lstrip(".")[1:]
+        file_render = small_font.render(testo_file, True, (200, 200, 200) if valore else (120, 120, 120))
+        SCREEN.blit(file_render, (browse_rect.right + 10, browse_rect.centery - file_render.get_height() // 2))
 
         base_y += 40
 

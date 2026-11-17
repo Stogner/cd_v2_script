@@ -36,6 +36,8 @@ A small notification appears when the deck connects or disconnects. Unplugging a
 
 > ⚠️ **Windows SmartScreen / antivirus:** the `.exe` isn't digitally signed, so Windows may say *"Windows protected your PC"*. Click **More info → Run anyway**. On a work PC, your IT department may need to approve it.
 
+**Already set up your buttons with the Python version?** Put `ConsoleDeck.exe` in that project folder (next to its `config.json`) before running it the first time; your buttons are imported automatically.
+
 Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File Explorer's address bar to open the folder), so they're kept when you replace `ConsoleDeck.exe` with a newer version.
 
 ---
@@ -45,7 +47,9 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
 - Click one of the 10 buttons (laid out like the deck itself) to assign an action
 - Choose between:
   - a website URL (e.g. `https://youtube.com`)
-  - a `.exe` file on your PC
+  - a program or script on your PC: `.exe`, PowerShell `.ps1`, or batch `.bat` / `.cmd`
+    - scripts open in their own window, which closes when the script finishes (add `Read-Host "Press Enter to close"` or `pause` at the end to keep it open)
+    - PowerShell scripts run with `-ExecutionPolicy Bypass`, so your own unsigned scripts work (unless your IT department blocks scripts with a group policy)
   - a keyboard macro, either a preset:
     - `CTRL+C` – copy
     - `CTRL+V` – paste
@@ -57,7 +61,7 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
     - Symbols: `plus`, `minus`, `,` `.` `/` `;` `'` `[` `]` `\` `` ` ``
     - Media keys: `playpause`, `nexttrack`, `prevtrack`, `stop`, `volumeup`, `volumedown`, `volumemute`
   - or no action
-- Use the "Browse" button to select `.exe` files
+- Use the "Browse" button to select programs and scripts
 - Save your changes only when you're ready
 - The knob controls the volume (press it to mute). Button 10 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
 
@@ -87,8 +91,8 @@ Only one copy can run at a time. Look for the icon next to the clock (click the 
 **🔗 Can I use YouTube or other links?**  
 Yes, any valid `https://` link will work.
 
-**🧩 Can I assign programs like `.exe` files?**  
-Yes! Use the “Browse” button to pick an executable file.
+**🧩 Can I assign programs or scripts?**  
+Yes! Choose **EXE** and use the “Browse” button to pick a `.exe`, `.ps1`, `.bat` or `.cmd` file. Scripts start in their own folder, so relative paths inside them work.
 
 **⌨️ Where do keyboard macros go?**  
 Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button. Windows doesn't let them reach programs running as administrator (e.g. Task Manager).
