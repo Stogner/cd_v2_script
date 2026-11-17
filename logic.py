@@ -1,34 +1,37 @@
 import os
+import sys
 import json
 import subprocess
 import webbrowser
-import serial
 import serial.tools.list_ports
-import time
 import ctypes
 
 BAUDRATE = 9600
 
-ARDUINO_KEYWORDS = ["arduino", "ch340", "ch341", "ftdi", "usb serial", "usb-serial"]
+ARDUINO_KEYWORDS = ["arduino", "ch340", "ch341", "ftdi", "usb serial", "usb-serial", "cp210", "silicon labs"]
+# Vendor ID USB dei chip più usati sulle schede Arduino e cloni
+ARDUINO_VIDS = {0x2341, 0x2A03, 0x1A86, 0x0403, 0x10C4, 0x067B}
 
 def trova_porta_arduino():
+    # Nessun ripiego sulla "prima porta": potrebbe essere una porta Bluetooth, non il deck
     ports = serial.tools.list_ports.comports()
     for port in ports:
         description = (port.description or "").lower()
         manufacturer = (port.manufacturer or "").lower()
-        if any(kw in description or kw in manufacturer for kw in ARDUINO_KEYWORDS):
+        if port.vid in ARDUINO_VIDS or any(kw in description or kw in manufacturer for kw in ARDUINO_KEYWORDS):
             print(f"[DEBUG] Arduino found on {port.device}: {port.description}")
             return port.device
-    if ports:
-        print(f"[DEBUG] No Arduino signature found, defaulting to first port: {ports[0].device}")
-        return ports[0].device
-    print("[ERROR] No serial ports found.")
+    print("[ERROR] Deck not found. Serial ports:", ", ".join(f"{p.device} ({p.description})" for p in ports) or "none")
     return None
 
-PORTA_ARDUINO = trova_porta_arduino()
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(SCRIPT_DIR, "config.json")
+if getattr(sys, "frozen", False):
+    # App .exe: impostazioni in %APPDATA%\ConsoleDeck, così sopravvivono agli aggiornamenti dell'exe
+    DATA_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "ConsoleDeck")
+    os.makedirs(DATA_DIR, exist_ok=True)
+else:
+    DATA_DIR = SCRIPT_DIR
+CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
 
 # Stato del pulsante selezionato
 pulsante_selezionato = None
@@ -78,27 +81,24 @@ def esegui_azione(azione):
     else:
         print("Nessuna azione definita")
 
+def gestisci_messaggio(linea, config):
+    # Esegue l'azione corrispondente a una riga ricevuta dal deck
+    print("Ricevuto:", linea)
+    if linea.startswith("VOLUME_"):
+        gestisci_volume(linea[len("VOLUME_"):])
+    elif linea == "MUTE":
+        gestisci_mute()
+    elif linea == "MEDIA":  # sketch vecchi: pulsante play/pausa dedicato
+        gestisci_media()
+    elif linea == "CONSOLEDECK_READY":
+        reset_volume()  # il deck si è riavviato e il suo contatore riparte da 0
+    elif linea in config:
+        esegui_azione(config[linea])
+
 def ascolta_seriale(config):
-    try:
-        with serial.Serial(PORTA_ARDUINO, BAUDRATE, timeout=1) as ser:
-            print(f"Connesso a {PORTA_ARDUINO}")
-            while True:
-                linea = ser.readline().decode('utf-8').strip()
-                if linea:
-                    print("Ricevuto:", linea)
-                    if linea.startswith("VOLUME_"):
-                        valore = linea.replace("VOLUME_", "")
-                        gestisci_volume(valore)
-                    elif linea == "MUTE":
-                        gestisci_mute()
-                    elif linea == "MEDIA":
-                        gestisci_media()
-                    elif linea in config:
-                        esegui_azione(config[linea])
-    except Exception as e:
-        print(f"[ERRORE] Porta seriale: {e}")
-        time.sleep(5)
-        ascolta_seriale(config)
+    # Modalità riga di comando: ascolta il deck (riconnettendosi da solo) finché non si preme Ctrl+C
+    from listener import DeckListener
+    DeckListener(config, on_status=lambda porta: print(f"Connesso a {porta}" if porta else "Deck non connesso")).run()
 
 def simulate_keypress(vk_code):
     KEYEVENTF_EXTENDEDKEY = 0x0001
@@ -182,6 +182,10 @@ def gestisci_volume(value):
         last_volume_value = valore
     except ValueError:
         print("[ERROR] Invalid volume value:", value)
+
+def reset_volume():
+    global last_volume_value
+    last_volume_value = 0
 
 def gestisci_mute():
     global is_muted

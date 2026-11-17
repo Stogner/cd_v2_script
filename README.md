@@ -3,66 +3,40 @@
 ConsoleDeck is a simple graphical interface that allows you to configure up to 10 buttons to launch websites, executable files or keyboard shortcuts with a click.  
 Ideal for creating your own customizable macro deck or personal launcher.
 
+It runs in the background like the Stream Deck software: an icon by the clock, no command windows, and it starts with Windows.
+
 ---
 
 ## ✅ Requirements
 
 - A Windows PC
-- Python 3.11 or higher
-- Internet connection (only for the initial setup)
+- The ConsoleDeck (Arduino) with `console_deck_v2_arduino_code/console_deck_v2.ino` uploaded (see [Programming the deck](#-programming-the-deck))
 
 ---
 
-## 🐍 Step 1 – Install Python
+## 🚀 Install the app (recommended)
 
-1. Go to 👉 [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. Download the latest version of Python 3
-3. During installation, **check the box** ✅ **"Add Python to PATH"**
-4. Click **Install Now**
+1. On the GitHub page of this repository, open the **Actions** tab and click the latest **Build Windows app** run with a green ✓ (or download `ConsoleDeck.exe` from **Releases**, if there is one)
+2. At the bottom, under **Artifacts**, download **ConsoleDeck** and unzip it
+3. Move `ConsoleDeck.exe` somewhere permanent, e.g. `Documents\ConsoleDeck\`
+4. Double-click `ConsoleDeck.exe`
 
----
+The first time, the button setup window opens and ConsoleDeck is set to start with Windows. After that it lives in the **notification area** next to the clock (click the **^** arrow if you don't see it):
 
-## 📦 Step 2 – Install required libraries
+| Tray menu | What it does |
+|---|---|
+| **Configure buttons** (or double-click the icon) | Opens the setup window. Saved changes apply immediately |
+| *Deck connected (COM4)* | Connection status |
+| **Reconnect deck** | Searches for the deck again |
+| **Start with Windows** | Turns automatic start on/off |
+| **Open log file** | Shows what the app received and did, useful for troubleshooting |
+| **Quit** | Closes ConsoleDeck |
 
-1. Open the Start menu
-2. Type `cmd` and press Enter
-3. In the terminal window, paste the following command:
+A small notification appears when the deck connects or disconnects. Unplugging and re-plugging the deck is fine: it reconnects automatically.
 
-```bash
-pip install pygame-ce pyperclip pyserial
-```
+> ⚠️ **Windows SmartScreen / antivirus:** the `.exe` isn't digitally signed, so Windows may say *"Windows protected your PC"*. Click **More info → Run anyway**. On a work PC, your IT department may need to approve it.
 
-(or, from inside the project folder: `pip install -r requirements.txt`)
-
-> ℹ️ This uses **pygame-ce**, a maintained drop-in replacement for `pygame`. The original `pygame` package has no installer for the newest Python versions (e.g. 3.15), so `pip install pygame` tries to compile it and fails with errors like `No module named 'distutils.msvccompiler'`. If you already installed `pygame`, remove it first with `pip uninstall pygame`; the two cannot be installed together.
-
-If you get an error like `'pip' is not recognized`, try restarting your PC.
-
----
-
-## ▶️ Step 3 – Program your buttons
-
-1. Download all project files into a folder (e.g., Desktop)
-2. Double-click `consoledeck.bat`, or open that folder in the terminal (`cmd`) and run:
-
-```bash
-python main.py --gui
-```
-
-If everything is set up correctly, a graphical window will open. Program your buttons and click **Save**, then close the window.
-
----
-
-## 🎛️ Step 4 – Use the deck
-
-1. Plug in the ConsoleDeck (Arduino) over USB
-2. Double-click `avvio_consoledeck.bat`, or run:
-
-```bash
-python main.py
-```
-
-The terminal should print `Connesso a COM…` ("Connected to COM…"). Leave this window open: it listens to the deck and performs each button's action. If you change your buttons in the GUI later, close this window and start it again so it picks up the new settings.
+Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File Explorer's address bar to open the folder), so they're kept when you replace `ConsoleDeck.exe` with a newer version.
 
 ---
 
@@ -83,22 +57,32 @@ The terminal should print `Connesso a COM…` ("Connected to COM…"). Leave thi
     - Symbols: `plus`, `minus`, `,` `.` `/` `;` `'` `[` `]` `\` `` ` ``
     - Media keys: `playpause`, `nexttrack`, `prevtrack`, `stop`, `volumeup`, `volumedown`, `volumemute`
   - or no action
-- Modify the fields directly inside the app
 - Use the "Browse" button to select `.exe` files
 - Save your changes only when you're ready
 - The knob controls the volume (press it to mute). Button 10 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
 
-Settings are stored in a local file called `config.json`.
+---
+
+## 🔌 Programming the deck
+
+The Arduino inside the deck needs the ConsoleDeck sketch (only once, or after changing the wiring):
+
+1. Install the [Arduino IDE](https://www.arduino.cc/en/software)
+2. Open `console_deck_v2_arduino_code/console_deck_v2.ino` (if asked to move it into a folder named `console_deck_v2`, click **OK**)
+3. **Tools → Board → Arduino Nano**, **Tools → Processor → ATmega328P** (or **ATmega328P (Old Bootloader)** if the upload fails with "not in sync"), **Tools → Port →** the deck's COM port
+4. Click **Upload** (→), then **close the Arduino IDE**: only one program can use the deck's port at a time
+
+To check which pin each button is wired to, upload `console_deck_v2_arduino_code/pin_finder/pin_finder.ino` instead, open **Tools → Serial Monitor** at 9600 baud and press the buttons. Upload `console_deck_v2.ino` again afterwards.
 
 ---
 
 ## ❓ Troubleshooting
 
-**🟡 Nothing happens when I click a button?**  
-Make sure you launched the app using: `python main.py --gui`
-
 **🎛️ Nothing happens when I press a button on the deck?**  
-The deck only works while `python main.py` (without `--gui`) is running; see Step 4. If it prints `[ERRORE] Porta seriale`, make sure the deck is plugged in and that nothing else is using its port (for example, close the Arduino IDE's Serial Monitor).
+Hover over the tray icon or right-click it: it should say *Deck connected*. If not, make sure the deck is plugged in and that nothing else is using its port (close the Arduino IDE, its Serial Monitor, and any `python main.py` window), then click **Reconnect deck**. **Open log file** shows every message received from the deck.
+
+**🔁 It says ConsoleDeck is already running**  
+Only one copy can run at a time. Look for the icon next to the clock (click the **^** arrow).
 
 **🔗 Can I use YouTube or other links?**  
 Yes, any valid `https://` link will work.
@@ -107,17 +91,34 @@ Yes, any valid `https://` link will work.
 Yes! Use the “Browse” button to pick an executable file.
 
 **⌨️ Where do keyboard macros go?**  
-Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button.
-
-**💾 It says 'pip' is not recognized**  
-Restart your computer or reinstall Python and ensure "Add Python to PATH" is selected during setup.
+Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button. Windows doesn't let them reach programs running as administrator (e.g. Task Manager).
 
 ---
 
 ## 🧼 How to uninstall
 
-- You can delete the project folder at any time
-- To uninstall Python, go to **Apps & Features** in Windows
+1. Right-click the tray icon → uncheck **Start with Windows** → **Quit**
+2. Delete `ConsoleDeck.exe`
+3. Optionally delete the settings folder `%APPDATA%\ConsoleDeck`
+
+---
+
+## 🐍 Running from source (for development)
+
+Requires Python 3.11 or higher ([python.org](https://www.python.org/downloads/), check **"Add Python to PATH"** during installation). In the project folder:
+
+```bash
+pip install -r requirements.txt
+python app.py            # the tray app
+python main.py --gui     # only the setup window (or double-click consoledeck.bat)
+python main.py           # only the deck listener, in the terminal (or double-click avvio_consoledeck.bat)
+```
+
+When running from source, settings are stored in `config.json` in the project folder. Run `pythonw app.py` instead of `python app.py` for no console window.
+
+> ℹ️ This uses **pygame-ce**, a maintained drop-in replacement for `pygame`. The original `pygame` package has no installer for the newest Python versions (e.g. 3.15), so `pip install pygame` tries to compile it and fails with errors like `No module named 'distutils.msvccompiler'`. If you already installed `pygame`, remove it first with `pip uninstall pygame`; the two cannot be installed together.
+
+To build `ConsoleDeck.exe` yourself on Windows: `pip install pyinstaller`, then `python build_exe.py`. The result is in `dist\`. GitHub builds it automatically on every push (`.github/workflows/build-windows.yml`); pushing a tag like `v1.0` also attaches it to a release.
 
 ---
 

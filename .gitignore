@@ -1,0 +1,5 @@
+build/
+dist/
+__pycache__/
+consoledeck.log*
+.first_run_done

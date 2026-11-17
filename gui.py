@@ -37,6 +37,12 @@ def init_pygame():
     pygame.init()
     FONT = pygame.font.SysFont(None, 24)
     SMALL_FONT = pygame.font.SysFont(None, 16)
+    try:
+        from icon import crea_icona
+        img = crea_icona(32)
+        pygame.display.set_icon(pygame.image.frombuffer(img.tobytes(), img.size, "RGBA"))
+    except ImportError:
+        pass  # Pillow non installato: icona predefinita
     SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("ConsoleDeck V2")
 
