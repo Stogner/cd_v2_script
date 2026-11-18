@@ -45,9 +45,11 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
 ## ⚙️ Features
 
 - Click one of the 10 buttons (laid out like the deck itself) to assign an action
+- Give each button a **name** (e.g. "Morning links"); it's shown under the button's number
 - Choose between:
   - a website URL (e.g. `https://youtube.com`), or several separated by spaces to open them all at once as browser tabs (e.g. `https://outlook.office.com https://github.com youtube.com`)
-  - a program or script on your PC: `.exe`, PowerShell `.ps1`, or batch `.bat` / `.cmd`
+  - **FILE**: one or more files on your PC, each opened like a double-click: programs (`.exe`), shortcuts and desktop web apps (`.lnk`, `.url`), documents (PDF, Excel, Word...), PowerShell `.ps1` and batch `.bat` / `.cmd` scripts
+    - **ADD FILES** lets you pick several at once (hold Ctrl); click it again to add files from other folders. ✕ removes a file, **CLEAR ALL** removes them all
     - scripts open in their own window, which closes when the script finishes (add `Read-Host "Press Enter to close"` or `pause` at the end to keep it open)
     - PowerShell scripts run with `-ExecutionPolicy Bypass`, so your own unsigned scripts work (unless your IT department blocks scripts with a group policy)
   - a keyboard macro, either a preset:
@@ -61,7 +63,6 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
     - Symbols: `plus`, `minus`, `,` `.` `/` `;` `'` `[` `]` `\` `` ` ``
     - Media keys: `playpause`, `nexttrack`, `prevtrack`, `stop`, `volumeup`, `volumedown`, `volumemute`
   - or no action
-- Use the "Browse" button to select programs and scripts
 - Save your changes only when you're ready
 - The URL and key boxes work like normal text boxes: click to place the cursor, drag or double-click to select, Shift+arrows, Ctrl+A/C/X/V. Pasting several links copied on separate lines puts them on one line, separated by spaces
 - The knob controls the volume (press it to mute). Button 10 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
@@ -92,8 +93,8 @@ Only one copy can run at a time. Look for the icon next to the clock (click the 
 **🔗 Can I use YouTube or other links?**  
 Yes, any valid `https://` link will work.
 
-**🧩 Can I assign programs or scripts?**  
-Yes! Choose **EXE** and use the “Browse” button to pick a `.exe`, `.ps1`, `.bat` or `.cmd` file. Scripts start in their own folder, so relative paths inside them work.
+**🧩 Can I assign programs, scripts, web apps or documents?**  
+Yes! Choose **FILE** and click **ADD FILES**: programs, scripts, shortcuts (including web apps installed from Edge or Chrome, which are shortcuts on your desktop) and documents all work, and one button can open several. Scripts start in their own folder, so relative paths inside them work.
 
 **⌨️ Where do keyboard macros go?**  
 Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button. Windows doesn't let them reach programs running as administrator (e.g. Task Manager).

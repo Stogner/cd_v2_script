@@ -61,7 +61,7 @@ def load_config():
         print("[DEBUG] Config file not found, creating default config.")
         config = {
             "BUTTON_1": {"type": "link", "value": "https://www.youtube.com"},
-            "BUTTON_10": {"type": "macro", "value": "playpause"},
+            "BUTTON_10": {"type": "macro", "value": "playpause", "name": "Play / Pause"},
         }
     # Aggiunge i pulsanti mancanti (es. config creati quando i pulsanti erano 9)
     for i in range(1, NUM_BUTTONS + 1):
@@ -76,10 +76,7 @@ def esegui_azione(azione):
     if azione["type"] == "link" and azione["value"]:
         apri_link(azione["value"])
     elif azione["type"] == "exe" and azione["value"]:
-        try:
-            avvia_programma(azione["value"])
-        except Exception as e:
-            print("Errore aprendo eseguibile:", e)
+        avvia_file(azione["value"])
     elif azione["type"] == "macro" and azione["value"]:
         tasti = parse_hotkey(azione["value"])
         if tasti:
@@ -101,21 +98,42 @@ def apri_link(valore):
         print(f"[DEBUG] Link aperto: {url}")
 
 SCRIPT_EXTS = (".ps1", ".bat", ".cmd")
+SEPARATORE_FILE = "|"  # "|" non può comparire nei nomi di file di Windows
+
+def dividi_file(valore):
+    return [p.strip() for p in (valore or "").split(SEPARATORE_FILE) if p.strip()]
+
+def unisci_file(percorsi):
+    return SEPARATORE_FILE.join(percorsi)
+
+def avvia_file(valore):
+    # Uno o più file separati da "|": se uno non si apre, si prosegue con gli altri
+    for percorso in dividi_file(valore):
+        try:
+            avvia_programma(percorso)
+        except Exception as e:
+            print(f"[ERRORE] Impossibile aprire {percorso}: {e}")
 
 def avvia_programma(percorso):
-    # Gli script girano in una finestra propria (visibile finché lo script è in esecuzione),
-    # con la cartella dello script come cartella di lavoro
     ext = os.path.splitext(percorso)[1].lower()
-    if ext not in SCRIPT_EXTS:
+    if ext == ".exe":
         subprocess.Popen(percorso)
-        return
-    if ext == ".ps1":
-        comando = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", percorso]
+    elif ext in SCRIPT_EXTS:
+        # Gli script girano in una finestra propria (visibile finché lo script è in esecuzione),
+        # con la cartella dello script come cartella di lavoro
+        if ext == ".ps1":
+            comando = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", percorso]
+        else:
+            comando = ["cmd.exe", "/c", percorso]
+        subprocess.Popen(comando, cwd=os.path.dirname(percorso) or None,
+                         creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
+    elif hasattr(os, "startfile"):
+        # Qualsiasi altro file (collegamenti .lnk/.url, web app, PDF, Excel...) si apre
+        # con il programma predefinito, come con un doppio clic
+        os.startfile(percorso)
     else:
-        comando = ["cmd.exe", "/c", percorso]
-    subprocess.Popen(comando, cwd=os.path.dirname(percorso) or None,
-                     creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0))
-    print(f"[DEBUG] Script avviato: {percorso}")
+        subprocess.Popen(["xdg-open", percorso])
+    print(f"[DEBUG] Aperto: {percorso}")
 
 def gestisci_messaggio(linea, config):
     # Esegue l'azione corrispondente a una riga ricevuta dal deck

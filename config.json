@@ -37,6 +37,7 @@
   },
   "BUTTON_10": {
     "type": "macro",
-    "value": "playpause"
+    "value": "playpause",
+    "name": "Play / Pause"
   }
 }

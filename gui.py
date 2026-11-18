@@ -3,12 +3,13 @@ import os
 import tkinter as tk
 from tkinter import simpledialog, filedialog
 import webbrowser
-from logic import esegui_azione, MACROS, parse_hotkey
+from logic import esegui_azione, MACROS, parse_hotkey, dividi_file
 from textbox import CampoTesto
 
 # Costanti globali
 FONT = None
 SMALL_FONT = None
+FONT_18 = None
 SCREEN = None
 
 BTN_SIZE = 100
@@ -26,18 +27,32 @@ macro_button_rects = {}
 
 temp_config_type = None
 temp_config_value = None
+temp_config_name = None   # nome del pulsante in modifica (None = invariato)
 
 save_enabled = False
 save_clicked = False
+
+# Pannello FILE: elenco dei file del pulsante
+clear_button_rect = None
+file_list_rect = None
+remove_file_rects = []   # [(indice del file, rect della X)]
+file_scroll = 0          # primo file visibile nell'elenco
+FILE_RIGHE = 3
+ALTEZZA_RIGA_FILE = 20
 
 input_active = False
 input_rect = None
 campo = CampoTesto()  # campo di testo (URL o combinazione di tasti) del pulsante selezionato
 
+nome_active = False
+nome_rect = None
+campo_nome = CampoTesto()  # campo NAME del pulsante selezionato
+
 def init_pygame():
-    global FONT, SMALL_FONT, SCREEN
+    global FONT, SMALL_FONT, FONT_18, SCREEN
     pygame.init()
     FONT = pygame.font.SysFont(None, 24)
+    FONT_18 = pygame.font.SysFont(None, 18)
     SMALL_FONT = pygame.font.SysFont(None, 16)
     try:
         from icon import crea_icona
@@ -60,6 +75,34 @@ ENCODER_POS = (3, 1)
 GRID_COLS = 4
 GRID_WIDTH = GRID_COLS * BTN_SIZE + (GRID_COLS - 1) * (SPACING_X - BTN_SIZE)
 GRID_START_X = (SCREEN_WIDTH - GRID_WIDTH) // 2
+
+def accorcia_a_sinistra(testo, font, larghezza_max):
+    # Percorsi lunghi: si mostra la parte finale ("...\cartella\file.pdf")
+    while len(testo) > 1 and font.size(testo)[0] > larghezza_max:
+        testo = "..." + testo.lstrip(".")[1:]
+    return testo
+
+
+def accorcia_a_destra(testo, font, larghezza_max):
+    if font.size(testo)[0] <= larghezza_max:
+        return testo
+    while testo and font.size(testo + "...")[0] > larghezza_max:
+        testo = testo[:-1]
+    return testo.rstrip() + "..."
+
+
+def righe_nome(nome, font, larghezza_max, max_righe=2):
+    # Divide il nome del pulsante in al massimo 2 righe che stanno nel riquadro
+    parole, righe = nome.split(), []
+    while parole and len(righe) < max_righe:
+        riga = parole.pop(0)
+        while parole and font.size(riga + " " + parole[0])[0] <= larghezza_max:
+            riga += " " + parole.pop(0)
+        righe.append(riga)
+    if parole:  # avanza testo: l'ultima riga finisce con "..."
+        righe[-1] = righe[-1] + " " + " ".join(parole)
+    return [accorcia_a_destra(r, font, larghezza_max) for r in righe]
+
 
 def posizione_cella(col, riga):
     return GRID_START_X + col * SPACING_X, MARGIN_Y + riga * SPACING_Y
@@ -96,16 +139,24 @@ def disegna_pulsanti(config, selezionato=None):
 
         pygame.draw.rect(SCREEN, border_color, (x, y, btn_size, btn_size), width=3, border_radius=8)
 
-        # Numero centrale
+        # Numero, con sotto il nome del pulsante (se c'è)
+        nome = temp_config_name if (selezionato == key and temp_config_name is not None) \
+            else config.get(key, {}).get("name", "")
+        righe = righe_nome(nome, SMALL_FONT, btn_size - 12) if nome else []
         num_text = FONT.render(str(i+1), True, (255, 255, 255))
-        num_x = x + (btn_size - num_text.get_width()) // 2
-        num_y = y + (btn_size - num_text.get_height()) // 2
-        SCREEN.blit(num_text, (num_x, num_y))
+        altezza_righe = len(righe) * SMALL_FONT.get_linesize()
+        num_y = y + (btn_size - num_text.get_height() - (altezza_righe + 6 if righe else 0)) // 2
+        SCREEN.blit(num_text, (x + (btn_size - num_text.get_width()) // 2, num_y))
+        riga_y = num_y + num_text.get_height() + 6
+        for riga in righe:
+            riga_render = SMALL_FONT.render(riga, True, (200, 200, 200))
+            SCREEN.blit(riga_render, (x + (btn_size - riga_render.get_width()) // 2, riga_y))
+            riga_y += SMALL_FONT.get_linesize()
 
     linea_y = margin_y + 3 * spacing_y + 5
     pygame.draw.line(SCREEN, (180, 180, 180), (start_x, linea_y), (start_x + total_width, linea_y), 2)
 
-    font_18 = pygame.font.SysFont(None, 18)
+    font_18 = FONT_18
 
     if selezionato:
         testo = f"Program button {selezionato.split('_')[1]}"
@@ -114,7 +165,8 @@ def disegna_pulsanti(config, selezionato=None):
 
     testo_render = font_18.render(testo, True, (255, 255, 255))
     area_testo_y = linea_y + 10
-    area_testo_height = btn_size
+    # Con un pulsante selezionato il titolo sta in alto, sopra il campo NAME
+    area_testo_height = 16 if selezionato else btn_size
 
     testo_x = (SCREEN_WIDTH - testo_render.get_width()) // 2
     testo_y = area_testo_y + (area_testo_height - testo_render.get_height()) // 2
@@ -137,7 +189,16 @@ def disegna_configuratore_avanzato(selezionato, config):
     tipo = temp_config_type if temp_config_type is not None else data.get("type", "none")
     valore = temp_config_value if temp_config_value is not None else data.get("value", "")
 
-    opzioni = ["LINK", "EXE", "MACRO", "NONE"]
+    # Nome del pulsante (mostrato sotto il numero)
+    global nome_rect
+    nome = temp_config_name if temp_config_name is not None else data.get("name", "")
+    nome_label = small_font.render("NAME:", True, (200, 200, 200))
+    nome_rect = pygame.Rect(100, 416, 490, 28)
+    SCREEN.blit(nome_label, (50, nome_rect.centery - nome_label.get_height() // 2))
+    campo_nome.disegna(SCREEN, nome_rect, nome, SMALL_FONT, nome_active)
+
+    # Etichetta mostrata -> tipo salvato in config.json ("exe" resta per compatibilità)
+    opzioni = [("LINK", "link"), ("FILE", "exe"), ("MACRO", "macro"), ("NONE", "none")]
     base_y = 460
     btn_width = 120
     btn_height = 40
@@ -148,15 +209,19 @@ def disegna_configuratore_avanzato(selezionato, config):
     macro_button_rects = {}
     input_rect = None
     browse_button_rect = None
+    global clear_button_rect, file_list_rect, remove_file_rects, file_scroll
+    clear_button_rect = None
+    file_list_rect = None
+    remove_file_rects = []
 
-    for i, nome in enumerate(opzioni):
+    for i, (nome, tipo_opzione) in enumerate(opzioni):
         x = start_x + i * (btn_width + spazio)
         y = base_y
-        attivo = (nome.lower() == tipo)
+        attivo = (tipo_opzione == tipo)
         colore = (200, 120, 40) if attivo else (80, 80, 80)
 
         rect = pygame.Rect(x, y, btn_width, btn_height)
-        tipo_button_rects[nome] = rect
+        tipo_button_rects[tipo_opzione] = rect
 
         pygame.draw.rect(SCREEN, colore, rect, border_radius=6)
         testo = small_font.render(nome, True, (255, 255, 255))
@@ -176,25 +241,48 @@ def disegna_configuratore_avanzato(selezionato, config):
         base_y += 40
 
     elif tipo == "exe":
-        label = small_font.render("SELECT PROGRAM OR SCRIPT (.exe, .ps1, .bat, .cmd):", True, (200, 200, 200))
-        SCREEN.blit(label, (50, base_y))
+        file = dividi_file(valore)
 
-        base_y += label.get_height() + 5
-        browse_rect = pygame.Rect(50, base_y, 100, 30)
+        browse_rect = pygame.Rect(50, base_y, 110, 30)
         pygame.draw.rect(SCREEN, (200, 120, 40), browse_rect, border_radius=5)
-        btn_text = small_font.render("BROWSE", True, (255, 255, 255))
+        btn_text = small_font.render("ADD FILES", True, (255, 255, 255))
         SCREEN.blit(btn_text, btn_text.get_rect(center=browse_rect.center))
         browse_button_rect = browse_rect
+        x_suggerimento = browse_rect.right + 12
 
-        # File scelto (se il percorso è troppo lungo si mostra la parte finale)
-        testo_file = valore or "No file selected"
-        larghezza_max = SCREEN_WIDTH - 50 - (browse_rect.right + 10)
-        while len(testo_file) > 1 and small_font.size(testo_file)[0] > larghezza_max:
-            testo_file = "..." + testo_file.lstrip(".")[1:]
-        file_render = small_font.render(testo_file, True, (200, 200, 200) if valore else (120, 120, 120))
-        SCREEN.blit(file_render, (browse_rect.right + 10, browse_rect.centery - file_render.get_height() // 2))
+        if file:
+            clear_button_rect = pygame.Rect(browse_rect.right + 10, base_y, 90, 30)
+            pygame.draw.rect(SCREEN, (80, 80, 80), clear_button_rect, border_radius=5)
+            clear_text = small_font.render("CLEAR ALL", True, (255, 255, 255))
+            SCREEN.blit(clear_text, clear_text.get_rect(center=clear_button_rect.center))
+            x_suggerimento = clear_button_rect.right + 12
 
-        base_y += 40
+        if len(file) > FILE_RIGHE:
+            suggerimento = f"{len(file)} files, scroll the list to see them all"
+        else:
+            suggerimento = "Programs, scripts, shortcuts, documents..."
+        hint = small_font.render(suggerimento, True, (140, 140, 140))
+        SCREEN.blit(hint, (x_suggerimento, browse_rect.centery - hint.get_height() // 2))
+
+        base_y += 38
+        # Elenco dei file: una riga ciascuno, con la X per toglierlo; si scorre con la rotellina
+        file_list_rect = pygame.Rect(50, base_y, 540, FILE_RIGHE * ALTEZZA_RIGA_FILE)
+        if not file:
+            vuoto = small_font.render("No files selected", True, (120, 120, 120))
+            SCREEN.blit(vuoto, (50, base_y + 3))
+        file_scroll = max(0, min(file_scroll, len(file) - FILE_RIGHE))
+        for riga, i in enumerate(range(file_scroll, min(len(file), file_scroll + FILE_RIGHE))):
+            y = base_y + riga * ALTEZZA_RIGA_FILE
+            x_rect = pygame.Rect(50, y + 2, 16, 16)
+            pygame.draw.rect(SCREEN, (80, 80, 80), x_rect, border_radius=3)
+            pygame.draw.line(SCREEN, (230, 230, 230), (x_rect.x + 4, x_rect.y + 4), (x_rect.right - 5, x_rect.bottom - 5), 2)
+            pygame.draw.line(SCREEN, (230, 230, 230), (x_rect.x + 4, x_rect.bottom - 5), (x_rect.right - 5, x_rect.y + 4), 2)
+            remove_file_rects.append((i, x_rect))
+            testo_file = accorcia_a_sinistra(file[i], small_font, file_list_rect.right - (x_rect.right + 8))
+            file_render = small_font.render(testo_file, True, (200, 200, 200))
+            SCREEN.blit(file_render, (x_rect.right + 8, x_rect.centery - file_render.get_height() // 2))
+
+        base_y += FILE_RIGHE * ALTEZZA_RIGA_FILE + 2
 
     elif tipo == "macro":
         # Preset: un clic scrive la combinazione nel campo sotto
@@ -268,8 +356,9 @@ def is_dirty(selezionato, config):
     current = config.get(selezionato, {"type": "none", "value": ""})
     tipo = temp_config_type if temp_config_type is not None else current["type"]
     valore = temp_config_value if temp_config_value is not None else current["value"]
+    nome = temp_config_name if temp_config_name is not None else current.get("name", "")
 
-    return tipo != current["type"] or valore != current["value"]
+    return tipo != current["type"] or valore != current["value"] or nome != current.get("name", "")
 
 
 def trova_pulsante_click(mx, my):
