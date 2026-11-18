@@ -96,6 +96,9 @@ Yes, any valid `https://` link will work.
 **🧩 Can I assign programs, scripts, web apps or documents?**  
 Yes! Choose **FILE** and click **ADD FILES**: programs, scripts, shortcuts (including web apps installed from Edge or Chrome, which are shortcuts on your desktop) and documents all work, and one button can open several. Scripts start in their own folder, so relative paths inside them work.
 
+**🛍️ How do I open a Microsoft Store app (e.g. Claude, Apple Music)?**  
+Store apps live in a protected folder, so pick them by ID instead. In PowerShell run `Get-StartApps | Where-Object Name -like "*Claude*"` (replace Claude with the app's name) and copy the **AppID**. Then choose **LINK** and enter `shell:AppsFolder\` followed by that ID, e.g. `shell:AppsFolder\Claude_pzs8sxrjxfjjc!Claude`. It can be combined with web links on the same button, separated by spaces.
+
 **⌨️ Where do keyboard macros go?**  
 Macros are sent to whichever window currently has focus, just like pressing the keys yourself. Click into the app you want to copy from / paste into before pressing the deck button. Windows doesn't let them reach programs running as administrator (e.g. Task Manager).
 
