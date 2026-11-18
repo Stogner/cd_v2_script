@@ -2,7 +2,6 @@ import argparse
 from logic import load_config, save_config, ascolta_seriale, seleziona_pulsante, get_pulsante_selezionato, deseleziona_pulsante, MACROS, parse_hotkey
 from gui import init_pygame, disegna_pulsanti, trova_pulsante_click
 import pygame
-import pyperclip
 
 import gui
 
@@ -23,9 +22,11 @@ def run_gui(config):
     gui.temp_config_value = None
     gui.save_enabled = False
     gui.input_active = False
+    gui.campo.reset()
     init_pygame()
     pygame.key.set_repeat(300, 30)
-    
+    clock = pygame.time.Clock()
+
     running = True
     while running:
         selezionato = get_pulsante_selezionato()
@@ -40,9 +41,11 @@ def run_gui(config):
                 selezionato = get_pulsante_selezionato()
                 click_consumed = False
 
-                # Click dentro il campo input URL
+                # Click dentro il campo di testo (URL o combinazione di tasti): posiziona il cursore
                 if selezionato and gui.input_rect and gui.input_rect.collidepoint(mx, my):
                     gui.input_active = True
+                    shift = bool(pygame.key.get_mods() & pygame.KMOD_SHIFT)
+                    gui.campo.clic(valore_corrente(config, selezionato), gui.SMALL_FONT, gui.input_rect, mx, shift)
                     click_consumed = True
                 else:
                     gui.input_active = False
@@ -144,13 +147,23 @@ def run_gui(config):
                 btn = trova_pulsante_click(mx, my)
                 if btn:
                     seleziona_pulsante(btn)
+                    gui.campo.reset()
                     gui.temp_config_type = None
                     gui.temp_config_value = None
                     gui.save_enabled = False
                     gui.save_clicked = False
                     gui.input_active = False
             
-            # Gestione del campo di testo per l'input URL
+            # Selezione del testo trascinando il mouse
+            elif event.type == pygame.MOUSEMOTION and gui.input_active and gui.campo.trascinamento:
+                selezionato = get_pulsante_selezionato()
+                if selezionato and gui.input_rect:
+                    gui.campo.trascina(valore_corrente(config, selezionato), gui.SMALL_FONT, gui.input_rect, event.pos[0])
+
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                gui.campo.rilascia()
+
+            # Tastiera nel campo di testo: cursore, selezione, copia/taglia/incolla
             elif event.type == pygame.KEYDOWN and gui.input_active:
                 selezionato = get_pulsante_selezionato()
                 if not selezionato:
@@ -162,36 +175,22 @@ def run_gui(config):
                     gui.input_active = False
                     continue
 
-                if event.key == pygame.K_BACKSPACE:
-                    gui.temp_config_value = (gui.temp_config_value or "")[:-1]
-                elif event.key == pygame.K_v and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                    # Ctrl+V: incolla dagli appunti
-                    clipboard_text = pyperclip.paste()
-                    if clipboard_text:
-                        gui.temp_config_value = (gui.temp_config_value or "") + clipboard_text
-                elif event.key == pygame.K_a and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                    # Ctrl+A → Seleziona tutto (simbolico, nessuna azione visiva)
-                    pass  # niente da fare qui (è tutto già "selezionato")
-
-                elif event.key == pygame.K_c and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                    # Ctrl+C → Copia tutto il campo
-                    if gui.temp_config_value:
-                        pyperclip.copy(gui.temp_config_value)
-
-                elif event.key == pygame.K_x and (pygame.key.get_mods() & pygame.KMOD_CTRL):
-                    # Ctrl+X → Taglia tutto
-                    if gui.temp_config_value:
-                        pyperclip.copy(gui.temp_config_value)
-                        gui.temp_config_value = ""
-                        gui.save_enabled = gui.is_dirty(selezionato, config)        
-                else:
-                    char = event.unicode
-                    if char.isprintable():
-                        gui.temp_config_value = (gui.temp_config_value or "") + char
-
+                attuale = valore_corrente(config, selezionato)
+                nuovo = gui.campo.tasto(event, attuale)
+                if nuovo != attuale:
+                    gui.temp_config_value = nuovo
                 gui.save_enabled = gui.is_dirty(selezionato, config)
 
+        clock.tick(60)  # 60 fotogrammi al secondo: basta per il cursore, senza occupare la CPU
+
     pygame.quit()
+
+
+def valore_corrente(config, selezionato):
+    # Valore mostrato nel campo: quello in modifica, altrimenti quello salvato
+    if gui.temp_config_value is not None:
+        return gui.temp_config_value
+    return config.get(selezionato, {}).get("value", "")
 
 
 if __name__ == "__main__":

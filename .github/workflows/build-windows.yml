@@ -23,7 +23,7 @@ jobs:
         run: pip install -r requirements.txt pyinstaller
 
       - name: Check that the app imports on Windows
-        run: python -c "import app, main, gui, logic, listener, icon"
+        run: python -c "import app, main, gui, logic, listener, icon, textbox"
 
       - name: Build ConsoleDeck.exe
         run: python build_exe.py

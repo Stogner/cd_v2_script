@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import simpledialog, filedialog
 import webbrowser
 from logic import esegui_azione, MACROS, parse_hotkey
+from textbox import CampoTesto
 
 # Costanti globali
 FONT = None
@@ -31,6 +32,7 @@ save_clicked = False
 
 input_active = False
 input_rect = None
+campo = CampoTesto()  # campo di testo (URL o combinazione di tasti) del pulsante selezionato
 
 def init_pygame():
     global FONT, SMALL_FONT, SCREEN
@@ -126,7 +128,7 @@ def disegna_pulsanti(config, selezionato=None):
 
 def disegna_configuratore_avanzato(selezionato, config):
     global tipo_button_rects, cancel_button_rect, input_rect, browse_button_rect, macro_button_rects
-    small_font = pygame.font.SysFont(None, 16)
+    small_font = SMALL_FONT
 
     data = config.get(selezionato, {"type": "none", "value": ""})
 
@@ -163,18 +165,13 @@ def disegna_configuratore_avanzato(selezionato, config):
     base_y += btn_height + 15
 
     if tipo == "link":
-        label = small_font.render("ENTER URL:", True, (200, 200, 200))
+        label = small_font.render("ENTER URL (to open several links, separate them with spaces):", True, (200, 200, 200))
         SCREEN.blit(label, (50, base_y))
 
         base_y += label.get_height() + 5
 
         input_rect = pygame.Rect(50, base_y, 540, 30)
-        pygame.draw.rect(SCREEN, (255, 255, 255), input_rect, border_radius=4)
-
-        colore_testo = (0, 0, 0)
-        testo_url = valore if valore else ""
-        render_text = small_font.render(testo_url, True, colore_testo)
-        SCREEN.blit(render_text, (input_rect.x + 5, input_rect.y + 7))
+        campo.disegna(SCREEN, input_rect, valore or "", SMALL_FONT, input_active)
 
         base_y += 40
 
@@ -226,9 +223,7 @@ def disegna_configuratore_avanzato(selezionato, config):
         base_y += label.get_height() + 5
 
         input_rect = pygame.Rect(50, base_y, 540, 30)
-        pygame.draw.rect(SCREEN, (255, 255, 255), input_rect, border_radius=4)
-        render_text = small_font.render(valore or "", True, (0, 0, 0))
-        SCREEN.blit(render_text, (input_rect.x + 5, input_rect.y + 7))
+        campo.disegna(SCREEN, input_rect, valore or "", SMALL_FONT, input_active)
 
         base_y += 40
 

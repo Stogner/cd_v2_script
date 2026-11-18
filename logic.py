@@ -3,6 +3,7 @@ import sys
 import json
 import shutil
 import subprocess
+import time
 import webbrowser
 import serial.tools.list_ports
 import ctypes
@@ -73,7 +74,7 @@ def save_config(config):
 
 def esegui_azione(azione):
     if azione["type"] == "link" and azione["value"]:
-        webbrowser.open(azione["value"])
+        apri_link(azione["value"])
     elif azione["type"] == "exe" and azione["value"]:
         try:
             avvia_programma(azione["value"])
@@ -88,6 +89,16 @@ def esegui_azione(azione):
             print("[ERROR] Combinazione di tasti non valida:", azione["value"])
     else:
         print("Nessuna azione definita")
+
+def apri_link(valore):
+    # Più link separati da spazi: si aprono tutti, come schede del browser predefinito
+    for i, url in enumerate(valore.split()):
+        if ":" not in url:
+            url = "https://" + url  # "youtube.com" -> "https://youtube.com"
+        if i:
+            time.sleep(0.3)  # lascia al browser il tempo di aprirsi, così i link finiscono nella stessa finestra
+        webbrowser.open(url)
+        print(f"[DEBUG] Link aperto: {url}")
 
 SCRIPT_EXTS = (".ps1", ".bat", ".cmd")
 

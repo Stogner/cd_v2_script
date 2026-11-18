@@ -46,7 +46,7 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
 
 - Click one of the 10 buttons (laid out like the deck itself) to assign an action
 - Choose between:
-  - a website URL (e.g. `https://youtube.com`)
+  - a website URL (e.g. `https://youtube.com`), or several separated by spaces to open them all at once as browser tabs (e.g. `https://outlook.office.com https://github.com youtube.com`)
   - a program or script on your PC: `.exe`, PowerShell `.ps1`, or batch `.bat` / `.cmd`
     - scripts open in their own window, which closes when the script finishes (add `Read-Host "Press Enter to close"` or `pause` at the end to keep it open)
     - PowerShell scripts run with `-ExecutionPolicy Bypass`, so your own unsigned scripts work (unless your IT department blocks scripts with a group policy)
@@ -63,6 +63,7 @@ Settings are stored in `%APPDATA%\ConsoleDeck\config.json` (paste that into File
   - or no action
 - Use the "Browse" button to select programs and scripts
 - Save your changes only when you're ready
+- The URL and key boxes work like normal text boxes: click to place the cursor, drag or double-click to select, Shift+arrows, Ctrl+A/C/X/V. Pasting several links copied on separate lines puts them on one line, separated by spaces
 - The knob controls the volume (press it to mute). Button 10 is set to media play/pause by default (`playpause` macro) and can be reprogrammed like any other button
 
 ---
